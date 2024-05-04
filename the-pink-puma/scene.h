@@ -2,6 +2,7 @@
 #include "dxApplication.h"
 #include "mesh.h"
 #include "particleSystem.h"
+#include "robot.h"
 
 namespace mini::gk2
 {
@@ -57,12 +58,15 @@ namespace mini::gk2
 
 		ParticleSystem m_particles;
 
+		Robot m_robot;
+
 		void UpdateCameraCB(DirectX::XMMATRIX viewMtx);
 		void UpdateCameraCB() { UpdateCameraCB(m_camera.getViewMatrix()); }
 		void UpdateParticles(float dt);
 
 		void DrawMesh(const Mesh& m, DirectX::XMFLOAT4X4 worldMtx);
 		void DrawParticles();
+		void DrawRobot();
 
 		void SetWorldMtx(DirectX::XMFLOAT4X4 mtx);
 		void SetShaders(const dx_ptr<ID3D11VertexShader>& vs, const dx_ptr<ID3D11PixelShader>& ps);

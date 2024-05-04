@@ -97,6 +97,9 @@
     <ClCompile Include="particleSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="robot.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dxApplication.h">
@@ -163,6 +166,9 @@
       <Filter>Header Files\d3dx</Filter>
     </ClInclude>
     <ClInclude Include="particleSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="robot.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
