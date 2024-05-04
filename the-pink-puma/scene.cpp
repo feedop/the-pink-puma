@@ -20,7 +20,9 @@ RoomDemo::RoomDemo(HINSTANCE appInstance)
 	// ?
 	
 	//Particles
-	m_particles{ {-1.3f, -0.6f, -0.14f} }
+	m_particles{ {-1.3f, -0.6f, -0.14f} },
+	// Robot
+	m_robot(m_device)
 {
 	//Projection matrix
 	auto s = m_window.getClientSize();
@@ -121,6 +123,7 @@ void RoomDemo::Update(const Clock& c)
 	double dt = c.getFrameTime();
 	HandleCameraInput(dt);
 	UpdateParticles(dt);
+	m_robot.Update(dt);
 }
 
 void RoomDemo::SetWorldMtx(DirectX::XMFLOAT4X4 mtx)
@@ -167,6 +170,14 @@ void RoomDemo::DrawParticles()
 	m_device.context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
+void RoomDemo::DrawRobot()
+{
+	for (const auto& item : m_robot.getDrawData())
+	{
+		DrawMesh(std::get<0>(item), std::get<1>(item));
+	}
+}
+
 void RoomDemo::DrawScene()
 {
 	UpdateBuffer(m_cbSurfaceColor, XMFLOAT4{ 1.0f, 0.7f, 0.7f, 1.0f });
@@ -175,6 +186,10 @@ void RoomDemo::DrawScene()
 
 	UpdateBuffer(m_cbSurfaceColor, XMFLOAT4{ 0.7f, 0.2f, 0.7f, 1.0f });
 	DrawMesh(m_cylinder, m_cylinderMtx);
+
+	UpdateBuffer(m_cbSurfaceColor, XMFLOAT4{ 0.6f, 0.6f, 0.7f, 1.0f });
+	DrawRobot();
+
 	m_device.context()->RSSetState(nullptr);
 }
 
