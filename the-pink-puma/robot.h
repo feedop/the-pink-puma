@@ -10,7 +10,7 @@ namespace mini::gk2
 	class Robot
 	{
 	public:
-		Robot(const DxDevice& device);
+		explicit Robot(const DxDevice& device);
 
 		void Update(double dt);
 

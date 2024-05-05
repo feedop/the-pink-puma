@@ -11,48 +11,35 @@ namespace mini
 		virtual DirectX::XMMATRIX getViewMatrix() const = 0;
 	};
 
-	class OrbitCamera : public Camera
+	class FreeCamera : public Camera
 	{
 	public:
-		explicit OrbitCamera(DirectX::XMFLOAT3 target = DirectX::XMFLOAT3(0, 0, 0), 
-			float minDistance = 0.0f, float maxDistance = FLT_MAX, float distance = 0.0f);
-		explicit OrbitCamera(float minDistance, float maxDistance = FLT_MAX, float distance = 0.0f);
+		explicit FreeCamera(const DirectX::XMVECTOR& position);
 		
 		DirectX::XMMATRIX getViewMatrix() const override;
 		DirectX::XMFLOAT4 getCameraPosition() const;
 		
-		void MoveTarget(DirectX::XMFLOAT3 v) { MoveTarget(XMLoadFloat3(&v)); }
-		void MoveTarget(DirectX::FXMVECTOR v);
+		inline void Move(DirectX::XMFLOAT3 v) { Move(XMLoadFloat3(&v)); }
+		void Move(DirectX::FXMVECTOR v);
 		void Rotate(float dx, float dy);
-		void Zoom(float dd);
-		void SetDistanceRange(float minDistance, float maxDistance);
 
-		float getXAngle() const { return m_angleX; }
-		float getYAngle() const { return m_angleY; }
-		float getDistance() const { return m_distance; }
-		DirectX::XMFLOAT4 getTarget() const	{ return m_target; }
+		inline float getXAngle() const { return m_angleX; }
+		inline float getYAngle() const { return m_angleY; }
+
+	protected:
+		DirectX::XMVECTOR m_position, m_forward = DirectX::XMVectorSet(0, 0, 1, 1), m_up = DirectX::XMVectorSet(0, 1, 0, 1), m_right = DirectX::XMVectorSet(1, 0, 0, 1);
 
 	private:
-		void ClampDistance();
-
-		float m_angleX, m_angleY;
-		float m_distance, m_minDistance, m_maxDistance;
-		DirectX::XMFLOAT4 m_target;
+		float m_angleX = 0, m_angleY = 0;
+		
 	};
 
-	class FPSCamera : public OrbitCamera
+	class FPSCamera : public FreeCamera
 	{
 	public:
-		explicit FPSCamera(DirectX::XMFLOAT3 target)
-			: OrbitCamera(target, 0.0f, 0.0f)
+		explicit FPSCamera(const DirectX::XMVECTOR& position)
+			: FreeCamera(position)
 		{ }
-
-		using OrbitCamera::MoveTarget;
-		using OrbitCamera::Rotate;
-		using OrbitCamera::getXAngle;
-		using OrbitCamera::getYAngle;
-		using OrbitCamera::getTarget;
-		using OrbitCamera::getViewMatrix;
 
 		/*Returns target's forward direction parallel to ground (XZ) plane*/
 		DirectX::XMVECTOR getForwardDir() const;

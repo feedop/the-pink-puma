@@ -10,7 +10,7 @@ DxApplication::DxApplication(HINSTANCE hInstance, int wndWidth, int wndHeight, s
 	m_device(m_window), m_inputDevice(hInstance),
 	m_mouse(m_inputDevice.CreateMouseDevice(m_window.getHandle())),
 	m_keyboard(m_inputDevice.CreateKeyboardDevice(m_window.getHandle())),
-	m_camera(XMFLOAT3(0, 0, 0), 0.01f, 50.0f, 5), m_viewport{ m_window.getClientSize() }
+	m_camera(XMVectorSet(0, 0, -3, 1)), m_viewport{ m_window.getClientSize() }
 {
 	ID3D11Texture2D *temp = nullptr;
 	auto hr = m_device.swapChain()->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&temp));
@@ -62,6 +62,50 @@ void mini::DxApplication::UpdateBuffer(const dx_ptr<ID3D11Buffer>& buffer, const
 	m_device.context()->Unmap(buffer.get(), 0);
 }
 
+bool DxApplication::HandleKeyboardInput(double dt)
+{
+	KeyboardState kstate;
+	if (!m_keyboard.GetState(kstate))
+		return false;
+
+	const auto& forward = m_camera.getForwardDir();
+	const auto& right = m_camera.getRightDir();
+	
+	bool flag = false;
+	if (kstate.isKeyDown(17)) // w
+	{
+		m_camera.Move(forward * MOVEMENT_SPEED * dt);
+		flag = true;
+	}
+	if (kstate.isKeyDown(30)) // a
+	{
+		m_camera.Move(-right * MOVEMENT_SPEED * dt);
+		flag = true;
+	}
+	if (kstate.isKeyDown(31)) // s
+	{
+		m_camera.Move(-forward * MOVEMENT_SPEED * dt);
+		flag = true;
+	}
+	if (kstate.isKeyDown(32)) // d
+	{
+		m_camera.Move(right * MOVEMENT_SPEED * dt);
+		flag = true;
+	}
+	if (kstate.isKeyDown(16)) // q
+	{
+		m_camera.Move(XMVectorSet(0,-1,0,0) * MOVEMENT_SPEED * dt);
+		flag = true;
+	}
+	if (kstate.isKeyDown(18)) // e
+	{
+		m_camera.Move(XMVectorSet(0, 1, 0, 0) * MOVEMENT_SPEED * dt);
+		flag = true;
+	}
+		
+	return flag;
+}
+
 bool DxApplication::HandleCameraInput(double dt)
 {
 	MouseState mstate;
@@ -70,8 +114,6 @@ bool DxApplication::HandleCameraInput(double dt)
 	auto d = mstate.getMousePositionChange();
 	if (mstate.isButtonDown(0))
 		m_camera.Rotate(d.y * ROTATION_SPEED, d.x * ROTATION_SPEED);
-	else if (mstate.isButtonDown(1))
-		m_camera.Zoom(d.y * ZOOM_SPEED);
 	else
 		return false;
 	return true;

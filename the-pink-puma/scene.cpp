@@ -63,7 +63,7 @@ RoomDemo::RoomDemo(HINSTANCE appInstance)
 	XMStoreFloat4x4(&m_cylinderMtx, XMMatrixRotationZ(XM_PIDIV2) * XMMatrixScaling(2.0f, 2.0f, 2.0f) * XMMatrixTranslation(0.0f, -2.0f, 1.0f));
 
 	// Light position
-	m_lightPos = { 0.0f, 0.9f, 0.0f, 1.0f };
+	m_lightPos = { -1.0f, 1.0f, -1.0f, 1.0f };
 
 	//Render states
 	RasterizerDescription rsDesc;
@@ -121,6 +121,7 @@ void mini::gk2::RoomDemo::UpdateParticles(float dt)
 void RoomDemo::Update(const Clock& c)
 {
 	double dt = c.getFrameTime();
+	HandleKeyboardInput(dt);
 	HandleCameraInput(dt);
 	UpdateParticles(dt);
 	m_robot.Update(dt);
@@ -180,14 +181,14 @@ void RoomDemo::DrawRobot()
 
 void RoomDemo::DrawScene()
 {
-	UpdateBuffer(m_cbSurfaceColor, XMFLOAT4{ 1.0f, 0.7f, 0.7f, 1.0f });
+	UpdateBuffer(m_cbSurfaceColor, XMFLOAT4{ 0.7f, 0.7f, 1.0f, 1.0f });
 	for (auto& wallMtx : m_wallsMtx)
 		DrawMesh(m_wall, wallMtx);
 
 	UpdateBuffer(m_cbSurfaceColor, XMFLOAT4{ 0.7f, 0.2f, 0.7f, 1.0f });
 	DrawMesh(m_cylinder, m_cylinderMtx);
 
-	UpdateBuffer(m_cbSurfaceColor, XMFLOAT4{ 0.6f, 0.6f, 0.7f, 1.0f });
+	UpdateBuffer(m_cbSurfaceColor, XMFLOAT4{ 1.0f, 0.6f, 0.7f, 1.0f });
 	DrawRobot();
 
 	m_device.context()->RSSetState(nullptr);
