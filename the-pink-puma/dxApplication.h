@@ -41,6 +41,8 @@ namespace mini
 			UpdateBuffer(buffer, data.data(), data.size() * sizeof(T));
 		}
 
+		bool HandleKeyboardInput(double dt);
+
 		bool HandleCameraInput(double dt);
 
 		//***************** NEW *****************
@@ -54,10 +56,10 @@ namespace mini
 		Mouse m_mouse;
 		Keyboard m_keyboard;
 
-		static constexpr float ROTATION_SPEED = 0.01f;
-		static constexpr float ZOOM_SPEED = 0.02f;
+		inline static constexpr float ROTATION_SPEED = 0.005f;
+		inline static constexpr float MOVEMENT_SPEED = 0.5f;
 
-		OrbitCamera m_camera;
+		FPSCamera m_camera;
 
 	private:
 
