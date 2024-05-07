@@ -7,8 +7,8 @@ using namespace gk2;
 using namespace DirectX;
 using namespace std;
 
-RoomDemo::RoomDemo(HINSTANCE appInstance)
-	: DxApplication(appInstance, 1280, 720, L"Pokój"), 
+Scene::Scene(HINSTANCE appInstance)
+	: DxApplication(appInstance, 1280, 720, L"Pokój"),
 	//Constant Buffers
 	m_cbWorldMtx(m_device.CreateConstantBuffer<XMFLOAT4X4>()),
 	m_cbProjMtx(m_device.CreateConstantBuffer<XMFLOAT4X4>()),
@@ -17,12 +17,11 @@ RoomDemo::RoomDemo(HINSTANCE appInstance)
 	m_cbLightPos(m_device.CreateConstantBuffer<XMFLOAT4>()),
 
 	//Textures
-	// ?
-	
-	//Particles
-	m_particles{ {-1.3f, -0.6f, -0.14f} },
+	m_smokeTexture(m_device.CreateShaderResourceView(L"resources/textures/smoke.png")),
+	m_opacityTexture(m_device.CreateShaderResourceView(L"resources/textures/smokecolors.png")),
+
 	// Robot
-	m_robot(m_device)
+	m_robot(m_device, CIRCLE_CENTER, CIRCLE_RADIUS)
 {
 	//Projection matrix
 	auto s = m_window.getClientSize();
@@ -101,7 +100,72 @@ RoomDemo::RoomDemo(HINSTANCE appInstance)
 	m_device.context()->PSSetConstantBuffers(0, 2, psb); //Pixel Shaders - 0: surfaceColor, 1: lightPos, 2: mapMtx
 }
 
-void RoomDemo::UpdateCameraCB(XMMATRIX viewMtx)
+bool Scene::HandleKeyboardInput(double dt)
+{
+	static KeyboardState prevState;
+
+	KeyboardState kstate;
+	if (!m_keyboard.GetState(kstate))
+		return false;
+
+	const auto& forward = m_camera.getForwardDir();
+	const auto& right = m_camera.getRightDir();
+
+	bool flag = false;
+	if (kstate.isKeyDown(17)) // w
+	{
+		m_camera.Move(forward * MOVEMENT_SPEED * dt);
+	}
+	if (kstate.isKeyDown(30)) // a
+	{
+		m_camera.Move(-right * MOVEMENT_SPEED * dt);
+	}
+	if (kstate.isKeyDown(31)) // s
+	{
+		m_camera.Move(-forward * MOVEMENT_SPEED * dt);
+	}
+	if (kstate.isKeyDown(32)) // d
+	{
+		m_camera.Move(right * MOVEMENT_SPEED * dt);
+	}
+	if (kstate.isKeyDown(16)) // q
+	{
+		m_camera.Move(XMVectorSet(0, -1, 0, 0) * MOVEMENT_SPEED * dt);
+	}
+	if (kstate.isKeyDown(18)) // e
+	{
+		m_camera.Move(XMVectorSet(0, 1, 0, 0) * MOVEMENT_SPEED * dt);
+	}
+	if (prevState.keyPressed(kstate, 46)) // c
+	{
+		m_animateRobot = !m_animateRobot;
+		if (!m_animateRobot)
+			m_particles.Clear();
+	}
+
+	prevState = kstate;
+
+	if (m_animateRobot)
+		return flag;
+
+	for (int i = 0; i < 5; i++)
+	{
+		if (kstate.isKeyDown(19 + i)) // r + i
+		{
+			m_robotAngles[i] = XMScalarModAngle(m_robotAngles[i] + ROBOT_SPEED * dt);
+			flag = true;
+		}
+		if (kstate.isKeyDown(33 + i)) // f + i
+		{
+			m_robotAngles[i] = XMScalarModAngle(m_robotAngles[i] - ROBOT_SPEED * dt);
+			flag = true;
+		}
+	}
+
+	return flag;
+}
+
+void Scene::UpdateCameraCB(XMMATRIX viewMtx)
 {
 	XMVECTOR det;
 	XMMATRIX invViewMtx = XMMatrixInverse(&det, viewMtx);
@@ -112,46 +176,55 @@ void RoomDemo::UpdateCameraCB(XMMATRIX viewMtx)
 }
 
 
-void mini::gk2::RoomDemo::UpdateParticles(float dt)
+void mini::gk2::Scene::UpdateParticles(float dt)
 {
 	auto verts = m_particles.Update(dt, m_camera.getCameraPosition());
 	UpdateBuffer(m_vbParticles, verts);
 }
 
-void RoomDemo::Update(const Clock& c)
+void Scene::Update(const Clock& c)
 {
 	double dt = c.getFrameTime();
-	HandleKeyboardInput(dt);
 	HandleCameraInput(dt);
-	UpdateParticles(dt);
-	m_robot.Update(dt);
+
+	if (m_animateRobot)
+	{
+		m_robot.Animate(m_robotAngles, dt * ROBOT_SPEED);
+		m_particles.SetEmitterPos(m_robot.GetPositionOnCircle());
+		UpdateParticles(dt);
+	}
+
+	if (HandleKeyboardInput(dt) || m_animateRobot)
+	{
+		m_robot.Update(m_robotAngles);
+	}
 }
 
-void RoomDemo::SetWorldMtx(DirectX::XMFLOAT4X4 mtx)
+void Scene::SetWorldMtx(DirectX::XMFLOAT4X4 mtx)
 {
 	UpdateBuffer(m_cbWorldMtx, mtx);
 }
 
-void mini::gk2::RoomDemo::SetShaders(const dx_ptr<ID3D11VertexShader>& vs, const dx_ptr<ID3D11PixelShader>& ps)
+void mini::gk2::Scene::SetShaders(const dx_ptr<ID3D11VertexShader>& vs, const dx_ptr<ID3D11PixelShader>& ps)
 {
 	m_device.context()->VSSetShader(vs.get(), nullptr, 0);
 	m_device.context()->PSSetShader(ps.get(), nullptr, 0);
 }
 
-void mini::gk2::RoomDemo::SetTextures(std::initializer_list<ID3D11ShaderResourceView*> resList, const dx_ptr<ID3D11SamplerState>& sampler)
+void mini::gk2::Scene::SetTextures(std::initializer_list<ID3D11ShaderResourceView*> resList, const dx_ptr<ID3D11SamplerState>& sampler)
 {
 	m_device.context()->PSSetShaderResources(0, resList.size(), resList.begin());
 	auto s_ptr = sampler.get();
 	m_device.context()->PSSetSamplers(0, 1, &s_ptr);
 }
 
-void RoomDemo::DrawMesh(const Mesh& m, DirectX::XMFLOAT4X4 worldMtx)
+void Scene::DrawMesh(const Mesh& m, DirectX::XMFLOAT4X4 worldMtx)
 {
 	SetWorldMtx(worldMtx);
 	m.Render(m_device.context());
 }
 
-void RoomDemo::DrawParticles()
+void Scene::DrawParticles()
 {
 	//Set input layout, primitive topology, shaders, vertex buffer, and draw particles
 	SetTextures({ m_smokeTexture.get(), m_opacityTexture.get() });
@@ -163,7 +236,7 @@ void RoomDemo::DrawParticles()
 	unsigned int offset = 0;
 	auto vb = m_vbParticles.get();
 	m_device.context()->IASetVertexBuffers(0, 1, &vb, &stride, &offset);
-	m_device.context()->Draw(m_particles.particlesCount(), 0);
+	m_device.context()->Draw(m_particles.ParticleCount(), 0);
 
 	//Reset layout, primitive topology and geometry shader
 	m_device.context()->GSSetShader(nullptr, nullptr, 0);
@@ -171,15 +244,29 @@ void RoomDemo::DrawParticles()
 	m_device.context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 }
 
-void RoomDemo::DrawRobot()
+void Scene::DrawTransparentObjects()
 {
-	for (const auto& item : m_robot.getDrawData())
+	m_device.context()->OMSetBlendState(m_bsAlpha.get(), nullptr, UINT_MAX);
+	m_device.context()->OMSetDepthStencilState(m_dssNoWrite.get(), 0);
+	
+	if (m_animateRobot)
+	{
+		DrawParticles();
+	}
+	
+	m_device.context()->OMSetBlendState(nullptr, nullptr, UINT_MAX);
+	m_device.context()->OMSetDepthStencilState(nullptr, 0);
+}
+
+void Scene::DrawRobot()
+{
+	for (const auto& item : m_robot.GetDrawData())
 	{
 		DrawMesh(std::get<0>(item), std::get<1>(item));
 	}
 }
 
-void RoomDemo::DrawScene()
+void Scene::DrawScene()
 {
 	UpdateBuffer(m_cbSurfaceColor, XMFLOAT4{ 0.7f, 0.7f, 1.0f, 1.0f });
 	for (auto& wallMtx : m_wallsMtx)
@@ -192,9 +279,11 @@ void RoomDemo::DrawScene()
 	DrawRobot();
 
 	m_device.context()->RSSetState(nullptr);
+
+	DrawTransparentObjects();
 }
 
-void RoomDemo::Render()
+void Scene::Render()
 {
 	Base::Render();
 

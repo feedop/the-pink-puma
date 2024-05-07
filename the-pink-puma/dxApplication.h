@@ -9,6 +9,8 @@
 #include "mouse.h"
 #include "camera.h"
 
+#include <array>
+
 namespace mini
 {
 	class DxApplication : public mini::WindowApplication
@@ -41,8 +43,6 @@ namespace mini
 			UpdateBuffer(buffer, data.data(), data.size() * sizeof(T));
 		}
 
-		bool HandleKeyboardInput(double dt);
-
 		bool HandleCameraInput(double dt);
 
 		//***************** NEW *****************
@@ -57,7 +57,8 @@ namespace mini
 		Keyboard m_keyboard;
 
 		inline static constexpr float ROTATION_SPEED = 0.005f;
-		inline static constexpr float MOVEMENT_SPEED = 0.5f;
+		inline static constexpr float MOVEMENT_SPEED = 1.0f;
+		inline static constexpr float ROBOT_SPEED = 0.4f;
 
 		FPSCamera m_camera;
 

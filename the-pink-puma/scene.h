@@ -6,12 +6,12 @@
 
 namespace mini::gk2
 {
-	class RoomDemo : public DxApplication
+	class Scene : public DxApplication
 	{
 	public:
 		using Base = DxApplication;
 
-		explicit RoomDemo(HINSTANCE appInstance);
+		explicit Scene(HINSTANCE appInstance);
 
 	protected:
 		void Update(const Clock& dt) override;
@@ -19,13 +19,16 @@ namespace mini::gk2
 
 	private:
 #pragma region CONSTANTS
-		static constexpr float TABLE_H = 1.0f;
-		static constexpr float TABLE_TOP_H = 0.1f;
-		static constexpr float TABLE_R = 1.5f;
-		static constexpr unsigned int MAP_SIZE = 1024;
-		static constexpr float LIGHT_NEAR = 0.35f;
-		static constexpr float LIGHT_FAR = 5.5f;
-		static constexpr float LIGHT_FOV_ANGLE = DirectX::XM_PI / 3.0f;
+		inline static constexpr float TABLE_H = 1.0f;
+		inline static constexpr float TABLE_TOP_H = 0.1f;
+		inline static constexpr float TABLE_R = 1.5f;
+		inline static constexpr unsigned int MAP_SIZE = 1024;
+		inline static constexpr float LIGHT_NEAR = 0.35f;
+		inline static constexpr float LIGHT_FAR = 5.5f;
+		inline static constexpr float LIGHT_FOV_ANGLE = DirectX::XM_PI / 3.0f;
+
+		inline static constexpr DirectX::XMFLOAT3 CIRCLE_CENTER = { -0.75f, -1.5f, 0.0f };
+		inline static constexpr float CIRCLE_RADIUS = 0.2f;
 
 #pragma endregion
 		dx_ptr<ID3D11Buffer> m_cbWorldMtx, //vertex shader constant buffer slot 0
@@ -60,12 +63,18 @@ namespace mini::gk2
 
 		Robot m_robot;
 
+		bool m_animateRobot = false;
+		std::array<float, 5> m_robotAngles{};
+
+		bool HandleKeyboardInput(double dt);
+
 		void UpdateCameraCB(DirectX::XMMATRIX viewMtx);
 		void UpdateCameraCB() { UpdateCameraCB(m_camera.getViewMatrix()); }
 		void UpdateParticles(float dt);
 
 		void DrawMesh(const Mesh& m, DirectX::XMFLOAT4X4 worldMtx);
 		void DrawParticles();
+		void DrawTransparentObjects();
 		void DrawRobot();
 
 		void SetWorldMtx(DirectX::XMFLOAT4X4 mtx);

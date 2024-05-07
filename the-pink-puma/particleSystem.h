@@ -40,26 +40,40 @@ namespace mini
 
 			ParticleSystem(ParticleSystem&& other) = default;
 
-			ParticleSystem(DirectX::XMFLOAT3 emmiterPosition);
+			ParticleSystem(DirectX::XMFLOAT3 emitterPosition);
 
 			ParticleSystem& operator=(ParticleSystem&& other) = default;
 
 			std::vector<ParticleVertex> Update(float dt, DirectX::XMFLOAT4 cameraPosition);
 
-			size_t particlesCount() const { return m_particles.size(); }
-			static const int MAX_PARTICLES;		//maximal number of particles in the system
+			inline size_t ParticleCount() const 
+			{
+				return m_particles.size();
+			
+			}
+			inline void SetEmitterPos(DirectX::XMVECTOR emitterPosition)
+			{
+				XMStoreFloat3(&m_emitterPos, emitterPosition);
+			}
+
+			inline void Clear()
+			{
+				m_particles.clear();
+			}
+
+			inline static constexpr int MAX_PARTICLES = 500;		//maximal number of particles in the system
 
 		private:
-			static const DirectX::XMFLOAT3 EMITTER_DIR;	//mean direction of particles' velocity
-			static const float TIME_TO_LIVE;	//time of particle's life in seconds
-			static const float EMISSION_RATE;	//number of particles to be born per second
-			static const float MAX_ANGLE;		//maximal angle declination from mean direction
-			static const float MIN_VELOCITY;	//minimal value of particle's velocity
-			static const float MAX_VELOCITY;	//maximal value of particle's velocity
-			static const float PARTICLE_SIZE;	//initial size of a particle
-			static const float PARTICLE_SCALE;	//size += size*scale*dtime
-			static const float MIN_ANGLE_VEL;	//minimal rotation speed
-			static const float MAX_ANGLE_VEL;	//maximal rotation speed
+			inline static constexpr DirectX::XMFLOAT3 EMITTER_DIR{ 0.0f, 1.0f, 0.0f };	//mean direction of particles' velocity
+			inline static constexpr float TIME_TO_LIVE = 4.0f; //time of particle's life in seconds
+			inline static constexpr float EMISSION_RATE = 10.0f; //number of particles to be born per second
+			inline static constexpr float MAX_ANGLE = DirectX::XM_PIDIV2 / 9.0f; //maximal angle declination from mean direction
+			inline static constexpr float MIN_VELOCITY = 0.2f;	//minimal value of particle's velocity
+			inline static constexpr float MAX_VELOCITY = 0.33f;	//maximal value of particle's velocity
+			inline static constexpr float PARTICLE_SIZE = 0.08f;	//initial size of a particle
+			inline static constexpr float PARTICLE_SCALE = 1.0f; //size += size*scale*dtime
+			inline static constexpr float MIN_ANGLE_VEL = -DirectX::XM_PI; //minimal rotation speed
+			inline static constexpr float MAX_ANGLE_VEL = DirectX::XM_PI; //maximal rotation speed
 
 			DirectX::XMFLOAT3 m_emitterPos;
 			float m_particlesToCreate;
