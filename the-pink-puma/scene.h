@@ -29,6 +29,7 @@ namespace mini::gk2
 
 		inline static constexpr DirectX::XMFLOAT3 CIRCLE_CENTER = { -0.75f, -1.5f, 0.0f };
 		inline static constexpr float CIRCLE_RADIUS = 0.2f;
+		inline static constexpr float MIRROR_OFFSET = 0.1f;
 
 #pragma endregion
 		dx_ptr<ID3D11Buffer> m_cbWorldMtx, //vertex shader constant buffer slot 0
@@ -39,9 +40,11 @@ namespace mini::gk2
 
 		Mesh m_wall; //uses m_wallsMtx[6]
 		Mesh m_cylinder; //uses m_cylinderMtx
+		Mesh m_mirror; // uses m_mirrorMtx
+
 		dx_ptr<ID3D11Buffer> m_vbParticles;
 
-		DirectX::XMFLOAT4X4 m_projMtx, m_wallsMtx[6], m_cylinderMtx, m_lightViewMtx[2], m_lightProjMtx;
+		DirectX::XMFLOAT4X4 m_projMtx, m_wallsMtx[6], m_cylinderMtx, m_lightViewMtx[2], m_lightProjMtx, m_mirrorMtx;
 
 		DirectX::XMFLOAT4 m_lightPos;
 
