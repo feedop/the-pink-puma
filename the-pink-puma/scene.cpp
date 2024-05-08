@@ -7,6 +7,10 @@ using namespace gk2;
 using namespace DirectX;
 using namespace std;
 
+
+const unsigned int Scene::BS_MASK = 0xffffffff;
+
+
 Scene::Scene(HINSTANCE appInstance)
 	: DxApplication(appInstance, 1280, 720, L"Pokój"),
 	//Constant Buffers
@@ -48,7 +52,7 @@ Scene::Scene(HINSTANCE appInstance)
 	// TODO: Load robot
 	m_wall = Mesh::Rectangle(m_device, 4.0f);
 	m_cylinder = Mesh::Cylinder(m_device, 4, 9, 1.0f, 0.1f);
-	m_mirror = Mesh::DoubleRect(m_device, 2.f * (CIRCLE_RADIUS + MIRROR_OFFSET));
+	m_mirror = Mesh::Rectangle(m_device, 2.f * (CIRCLE_RADIUS + MIRROR_OFFSET));
 
 	m_vbParticles = m_device.CreateVertexBuffer<ParticleVertex>(ParticleSystem::MAX_PARTICLES);
 
@@ -62,7 +66,11 @@ Scene::Scene(HINSTANCE appInstance)
 	
 	XMStoreFloat4x4(&m_cylinderMtx, XMMatrixRotationZ(XM_PIDIV2) * XMMatrixScaling(2.0f, 2.0f, 2.0f) * XMMatrixTranslation(0.0f, -2.0f, 1.0f));
 
-	XMStoreFloat4x4(&m_mirrorMtx, XMMatrixRotationY(XM_PIDIV2) * XMMatrixRotationZ(XM_PIDIV2 / 3.0f) * XMMatrixTranslation(CIRCLE_CENTER.x, CIRCLE_CENTER.y, CIRCLE_CENTER.z));
+	XMStoreFloat4x4(&m_frontMirrorObjectMtx, XMMatrixRotationY(XM_PIDIV2*3.f) * XMMatrixRotationZ(XM_PIDIV2 / 3.0f) * XMMatrixTranslation(CIRCLE_CENTER.x, CIRCLE_CENTER.y, CIRCLE_CENTER.z));
+	XMStoreFloat4x4(&m_frontMirrorViewMtx, XMMatrixInverse(nullptr, XMLoadFloat4x4(&m_frontMirrorObjectMtx)) * XMMatrixScaling(1.0f, 1.0f, -1.0f) * XMLoadFloat4x4(&m_frontMirrorObjectMtx));
+
+	XMStoreFloat4x4(&m_backMirrorObjectMtx, XMMatrixRotationY(XM_PI) * XMLoadFloat4x4(&m_frontMirrorObjectMtx));
+	XMStoreFloat4x4(&m_backMirrorViewMtx, XMMatrixInverse(nullptr, XMLoadFloat4x4(&m_backMirrorObjectMtx)) * XMMatrixScaling(1.0f, 1.0f, -1.0f) * XMLoadFloat4x4(&m_backMirrorObjectMtx));
 
 	// Light position
 	m_lightPos = { -1.0f, 1.0f, -1.0f, 1.0f };
@@ -72,10 +80,32 @@ Scene::Scene(HINSTANCE appInstance)
 	rsDesc.CullMode = D3D11_CULL_NONE;
 	m_rsCullNone = m_device.CreateRasterizerState(rsDesc);
 
+	RasterizerDescription rsCCWDesc;
+	//TODO : 1.13. Setup rasterizer state with ccw front faces
+	rsCCWDesc.FrontCounterClockwise = true;
+	m_rsCCW = m_device.CreateRasterizerState(rsCCWDesc);
+
 	m_bsAlpha = m_device.CreateBlendState(BlendDescription::AlphaBlendDescription());
 	DepthStencilDescription dssDesc;
 	dssDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
 	m_dssNoWrite = m_device.CreateDepthStencilState(dssDesc);
+
+	// Setup depth stencil state for writing to stencil buffer
+	dssDesc.StencilEnable = true;
+	dssDesc.BackFace.StencilFunc = D3D11_COMPARISON_NEVER;
+	dssDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_DECR_SAT;
+	dssDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	dssDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+	m_dssStencilWrite = m_device.CreateDepthStencilState(dssDesc);
+
+	// Setup depth stencil state for stencil test for 3D objects
+	dssDesc.StencilEnable = true;
+	dssDesc.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
+	dssDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+	dssDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	dssDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	dssDesc.BackFace.StencilFunc = D3D11_COMPARISON_NEVER;
+	m_dssStencilTest = m_device.CreateDepthStencilState(dssDesc);
 
 	auto vsCode = m_device.LoadByteCode(L"phongVS.cso");
 	auto psCode = m_device.LoadByteCode(L"phongPS.cso");
@@ -269,7 +299,65 @@ void Scene::DrawRobot()
 	}
 }
 
-void Scene::DrawScene()
+
+void mini::gk2::Scene::DrawMirror()
+{
+	UpdateBuffer(m_cbSurfaceColor, XMFLOAT4{ 1.0f, 1.0f, 1.0f, 0.5f });
+	DrawMesh(m_mirror, m_frontMirrorObjectMtx);
+	DrawMesh(m_mirror, m_backMirrorObjectMtx);
+}
+
+
+void mini::gk2::Scene::DrawMirroredWorld(int i)
+{
+	XMFLOAT4X4* mirrorObjMtx;
+	XMFLOAT4X4* mirrorViewMtx;
+
+	switch (i)
+	{
+	case 0:
+		mirrorObjMtx = &m_frontMirrorObjectMtx;
+		mirrorViewMtx = &m_frontMirrorViewMtx;
+		break;
+
+	case 1:
+		mirrorObjMtx = &m_backMirrorObjectMtx;
+		mirrorViewMtx = &m_backMirrorViewMtx;
+		break;
+
+	default:
+		throw std::runtime_error("Invalid mirror number");
+	}
+
+	// Setup render state for writing to the stencil buffer
+	m_device.context()->OMSetDepthStencilState(m_dssStencilWrite.get(), i + 1);
+
+	DrawMesh(m_mirror, *mirrorObjMtx);
+
+	m_device.context()->OMSetDepthStencilState(m_dssStencilTest.get(), i + 1);
+
+	// Setup rasterizer state and view matrix for rendering the mirrored world
+	m_device.context()->RSSetState(m_rsCCW.get());
+	XMMATRIX mirrored = XMLoadFloat4x4(mirrorViewMtx) * m_camera.getViewMatrix();
+	UpdateCameraCB(mirrored);
+	
+	// Draw 3D objects of the mirrored scene
+	m_device.context()->OMSetBlendState(nullptr, nullptr, BS_MASK);
+
+	DrawScene(i != 1);
+
+	// Restore rasterizer state to it's original value
+	m_device.context()->RSSetState(nullptr);
+
+	// Restore view matrix to its original value
+	UpdateCameraCB();
+
+	// Restore depth stencil state to it's original value
+	m_device.context()->OMSetDepthStencilState(nullptr, 0);
+}
+
+
+void Scene::DrawScene(bool drawRobot)
 {
 	UpdateBuffer(m_cbSurfaceColor, XMFLOAT4{ 0.7f, 0.7f, 1.0f, 1.0f });
 	for (auto& wallMtx : m_wallsMtx)
@@ -278,14 +366,12 @@ void Scene::DrawScene()
 	UpdateBuffer(m_cbSurfaceColor, XMFLOAT4{ 0.7f, 0.2f, 0.7f, 1.0f });
 	DrawMesh(m_cylinder, m_cylinderMtx);
 
-	UpdateBuffer(m_cbSurfaceColor, XMFLOAT4{ 1.0f, 0.6f, 0.7f, 1.0f });
-	DrawRobot();
-
-	DrawMesh(m_mirror, m_mirrorMtx);
+	if (drawRobot) {
+		UpdateBuffer(m_cbSurfaceColor, XMFLOAT4{ 1.0f, 0.6f, 0.7f, 1.0f });
+		DrawRobot();
+	}
 
 	m_device.context()->RSSetState(nullptr);
-
-	DrawTransparentObjects();
 }
 
 void Scene::Render()
@@ -299,6 +385,14 @@ void Scene::Render()
 
 	// Bind m_lightMap and m_shadowMap textures then draw objects and particles using light&shadow pixel shader
 	SetShaders(m_phongVS, m_phongPS);
+
+	DrawMirroredWorld(0);
+	DrawMirroredWorld(1);
+
+	//render dodecahedron with one light and alpha blending
+	m_device.context()->OMSetBlendState(m_bsAlpha.get(), nullptr, BS_MASK);
+	DrawMirror();
+	m_device.context()->OMSetBlendState(nullptr, nullptr, BS_MASK);
 
 	DrawScene();
 

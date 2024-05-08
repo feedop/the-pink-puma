@@ -19,17 +19,11 @@ namespace mini::gk2
 
 	private:
 #pragma region CONSTANTS
-		inline static constexpr float TABLE_H = 1.0f;
-		inline static constexpr float TABLE_TOP_H = 0.1f;
-		inline static constexpr float TABLE_R = 1.5f;
-		inline static constexpr unsigned int MAP_SIZE = 1024;
-		inline static constexpr float LIGHT_NEAR = 0.35f;
-		inline static constexpr float LIGHT_FAR = 5.5f;
-		inline static constexpr float LIGHT_FOV_ANGLE = DirectX::XM_PI / 3.0f;
-
 		inline static constexpr DirectX::XMFLOAT3 CIRCLE_CENTER = { -0.75f, -1.5f, 0.0f };
 		inline static constexpr float CIRCLE_RADIUS = 0.2f;
 		inline static constexpr float MIRROR_OFFSET = 0.1f;
+
+		static const unsigned int BS_MASK;
 
 #pragma endregion
 		dx_ptr<ID3D11Buffer> m_cbWorldMtx, //vertex shader constant buffer slot 0
@@ -40,11 +34,19 @@ namespace mini::gk2
 
 		Mesh m_wall; //uses m_wallsMtx[6]
 		Mesh m_cylinder; //uses m_cylinderMtx
-		Mesh m_mirror; // uses m_mirrorMtx
+		Mesh m_mirror; // uses m_frontMirrorObjectMtx and m_backMirrorObjectMtx
 
 		dx_ptr<ID3D11Buffer> m_vbParticles;
 
-		DirectX::XMFLOAT4X4 m_projMtx, m_wallsMtx[6], m_cylinderMtx, m_lightViewMtx[2], m_lightProjMtx, m_mirrorMtx;
+		DirectX::XMFLOAT4X4 m_projMtx,
+			m_wallsMtx[6],
+			m_cylinderMtx,
+			m_lightViewMtx[2],
+			m_lightProjMtx,
+			m_frontMirrorObjectMtx,
+			m_backMirrorObjectMtx,
+			m_frontMirrorViewMtx,
+			m_backMirrorViewMtx;
 
 		DirectX::XMFLOAT4 m_lightPos;
 
@@ -55,6 +57,13 @@ namespace mini::gk2
 		dx_ptr<ID3D11RasterizerState> m_rsCullNone;
 		dx_ptr<ID3D11BlendState> m_bsAlpha;
 		dx_ptr<ID3D11DepthStencilState> m_dssNoWrite;
+		//Rasterizer state used to define front faces as counter-clockwise, used when drawing mirrored scene
+		dx_ptr<ID3D11RasterizerState> m_rsCCW;
+
+		//Depth stencil state used to fill the stencil buffer
+		dx_ptr<ID3D11DepthStencilState> m_dssStencilWrite;
+		//Depth stencil state used to perform stencil test when drawing mirrored scene
+		dx_ptr<ID3D11DepthStencilState> m_dssStencilTest;
 
 		dx_ptr<ID3D11InputLayout> m_inputlayout, m_particleLayout;
 
@@ -79,12 +88,14 @@ namespace mini::gk2
 		void DrawParticles();
 		void DrawTransparentObjects();
 		void DrawRobot();
+		void DrawMirror();
+		void DrawMirroredWorld(int i);
 
 		void SetWorldMtx(DirectX::XMFLOAT4X4 mtx);
 		void SetShaders(const dx_ptr<ID3D11VertexShader>& vs, const dx_ptr<ID3D11PixelShader>& ps);
 		void SetTextures(std::initializer_list<ID3D11ShaderResourceView*> resList, const dx_ptr<ID3D11SamplerState>& sampler);
 		void SetTextures(std::initializer_list<ID3D11ShaderResourceView*> resList) { SetTextures(std::move(resList), m_sampler); }
 
-		void DrawScene();
+		void DrawScene(bool drawRobot = true);
 	};
 }
