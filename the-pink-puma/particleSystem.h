@@ -19,18 +19,10 @@ namespace mini
 			ParticleVertex() : Pos(0.0f, 0.0f, 0.0f), Age(0.0f), Angle(0.0f), Size(0.0f) { }
 		};
 
-		struct ParticleVelocities
-		{
-			DirectX::XMFLOAT3 Velocity;
-			float AngularVelocity;
-
-			ParticleVelocities() : Velocity(0.0f, 0.0f, 0.0f), AngularVelocity(0.0f) { }
-		};
-
 		struct Particle
 		{
 			ParticleVertex Vertex;
-			ParticleVelocities Velocities;
+			DirectX::XMFLOAT3 Velocity{ 0.0f, 0.0f, 0.0f };
 		};
 
 		class ParticleSystem
@@ -61,19 +53,19 @@ namespace mini
 				m_particles.clear();
 			}
 
-			inline static constexpr int MAX_PARTICLES = 500;		//maximal number of particles in the system
+			inline static constexpr int MAX_PARTICLES = 2000;		//maximal number of particles in the system
 
 		private:
 			inline static constexpr DirectX::XMFLOAT3 EMITTER_DIR{ 0.0f, 1.0f, 0.0f };	//mean direction of particles' velocity
-			inline static constexpr float TIME_TO_LIVE = 4.0f; //time of particle's life in seconds
-			inline static constexpr float EMISSION_RATE = 10.0f; //number of particles to be born per second
-			inline static constexpr float MAX_ANGLE = DirectX::XM_PIDIV2 / 9.0f; //maximal angle declination from mean direction
-			inline static constexpr float MIN_VELOCITY = 0.2f;	//minimal value of particle's velocity
-			inline static constexpr float MAX_VELOCITY = 0.33f;	//maximal value of particle's velocity
-			inline static constexpr float PARTICLE_SIZE = 0.08f;	//initial size of a particle
+			inline static constexpr float TIME_TO_LIVE = 3.0f; //time of particle's life in seconds
+			inline static constexpr float EMISSION_RATE = 400.0f; //number of particles to be born per second
+			inline static constexpr float MIN_VELOCITY = 0.6f;	//minimal value of particle's velocity
+			inline static constexpr float MAX_VELOCITY = 0.8f;	//maximal value of particle's velocity
+			inline static constexpr float MIN_FORWARD_VELOCITY = 0.01f;	//minimal value of particle's velocity
+			inline static constexpr float MAX_FORWARD_VELOCITY = 0.3f;	//maximal value of particle's velocity
+			inline static constexpr float PARTICLE_SIZE = 0.02f;	//initial size of a particle
 			inline static constexpr float PARTICLE_SCALE = 1.0f; //size += size*scale*dtime
-			inline static constexpr float MIN_ANGLE_VEL = -DirectX::XM_PI; //minimal rotation speed
-			inline static constexpr float MAX_ANGLE_VEL = DirectX::XM_PI; //maximal rotation speed
+			inline static constexpr float ACCELERATION = 0.003f;
 
 			DirectX::XMFLOAT3 m_emitterPos;
 			float m_particlesToCreate;
