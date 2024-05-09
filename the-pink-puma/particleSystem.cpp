@@ -1,6 +1,7 @@
 #include "particleSystem.h"
 
 #include <iterator>
+#include <execution>
 
 #include "dxDevice.h"
 #include "exceptions.h"
@@ -24,13 +25,16 @@ ParticleSystem::ParticleSystem(DirectX::XMFLOAT3 emitterPosition)
 
 vector<ParticleVertex> ParticleSystem::Update(float dt, DirectX::XMFLOAT4 cameraPosition)
 {
-	size_t removeCount = 0;
-	for (auto& p : m_particles)
+	std::for_each(std::execution::par, m_particles.begin(), m_particles.end(), [&](auto& p)
 	{
 		UpdateParticle(p, dt);
-		if (p.Vertex.Age >= TIME_TO_LIVE)
-			++removeCount;
-	}
+	});
+
+	size_t removeCount = std::count_if(std::execution::par, m_particles.begin(), m_particles.end(), [&](auto& p)
+	{
+		return p.Vertex.Age >= TIME_TO_LIVE;
+	});
+
 	m_particles.erase(m_particles.begin(), m_particles.begin() + removeCount);
 
 	m_particlesToCreate += dt * EMISSION_RATE;
@@ -46,14 +50,17 @@ vector<ParticleVertex> ParticleSystem::Update(float dt, DirectX::XMFLOAT4 camera
 XMFLOAT3 ParticleSystem::RandomVelocity()
 {
 	static uniform_real_distribution<float> angleDist(0, XM_2PI);
-	static uniform_real_distribution<float> magnitudeDist(0, tan(MAX_ANGLE));
 	static uniform_real_distribution<float> velDist(MIN_VELOCITY, MAX_VELOCITY);
+	static uniform_real_distribution<float> forwardVelDist(MIN_VELOCITY, MAX_VELOCITY);
 	float angle = angleDist(m_random);
-	float magnitude = magnitudeDist(m_random);
-	XMFLOAT3 v{ cos(angle)*magnitude, 1.0f, sin(angle)*magnitude };
-
-	auto velocity = XMLoadFloat3(&v);
 	auto len = velDist(m_random);
+	auto forwardLen = forwardVelDist(m_random);
+	// random velocity on a circle in the yz plane
+	XMFLOAT3 v{ forwardLen, cos(angle), sin(angle) };
+
+	// rorate by 30 degrees to align the aforementioned circle with the cutting surface
+	auto velocity = XMVector3Transform(XMVector3Normalize(XMLoadFloat3(&v)), XMMatrixRotationZ(XM_PI / 6));
+	
 	velocity = len * XMVector3Normalize(velocity);
 	XMStoreFloat3(&v, velocity);
 	return v;
@@ -61,28 +68,38 @@ XMFLOAT3 ParticleSystem::RandomVelocity()
 
 Particle ParticleSystem::RandomParticle()
 {
-	static uniform_real_distribution<float> angularVelDist(MIN_ANGLE_VEL, MAX_ANGLE_VEL);
 	Particle p;
 	p.Vertex.Pos = m_emitterPos;
 	p.Vertex.Age = 0.0f;
 	p.Vertex.Angle = 0.0f;
 	p.Vertex.Size = PARTICLE_SIZE;
-	p.Velocities.Velocity = RandomVelocity();
-	p.Velocities.AngularVelocity = angularVelDist(m_random);
+	p.Velocity = RandomVelocity();
 
 	return p;
 }
 
 void ParticleSystem::UpdateParticle(Particle& p, float dt)
 {
-	// TODO - include acceleration
+	static constexpr float eps = 1e-5;
+	p.Velocity.y -= ACCELERATION;
 
 	auto pos = XMLoadFloat3(&p.Vertex.Pos);
-	auto vel = XMLoadFloat3(&p.Velocities.Velocity);
-	p.Vertex.Age += dt;
+	auto vel = XMLoadFloat3(&p.Velocity);
 	XMStoreFloat3(&p.Vertex.Pos, XMVectorAdd(pos, vel * dt));
+
+
+	p.Vertex.Age += dt;
 	p.Vertex.Size += PARTICLE_SCALE * PARTICLE_SIZE * dt;
-	p.Vertex.Angle += p.Velocities.AngularVelocity * dt;
+
+	if (XMVectorGetX(XMVector3Length(vel)) < eps)
+		return;
+
+	auto dot = XMVectorGetX(XMVector3Dot({ 0, 1 ,0 }, XMVector3Normalize(vel)));
+	auto angle = acos(dot);
+
+	// This soultion assumes surface facing the x direction
+	// A general solution is possible but this is good enough for now
+	p.Vertex.Angle = XMVectorGetZ(vel) < 0 ? angle : -angle;
 }
 
 vector<ParticleVertex> ParticleSystem::GetParticleVerts(DirectX::XMFLOAT4 cameraPosition)
