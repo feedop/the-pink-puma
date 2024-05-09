@@ -372,6 +372,13 @@ void Scene::DrawScene(bool drawRobot)
 	}
 
 	m_device.context()->RSSetState(nullptr);
+
+	m_device.context()->OMSetBlendState(m_bsAlpha.get(), nullptr, UINT_MAX);
+	m_device.context()->OMSetDepthStencilState(m_dssNoWrite.get(), 0);
+	DrawParticles();
+	m_device.context()->OMSetBlendState(nullptr, nullptr, UINT_MAX);
+	m_device.context()->OMSetDepthStencilState(nullptr, 0);
+	SetShaders(m_phongVS, m_phongPS);
 }
 
 void Scene::Render()
@@ -396,9 +403,5 @@ void Scene::Render()
 
 	DrawScene();
 
-	m_device.context()->OMSetBlendState(m_bsAlpha.get(), nullptr, UINT_MAX);
-	m_device.context()->OMSetDepthStencilState(m_dssNoWrite.get(), 0);
-	DrawParticles();
-	m_device.context()->OMSetBlendState(nullptr, nullptr, UINT_MAX);
-	m_device.context()->OMSetDepthStencilState(nullptr, 0);
+	
 }
