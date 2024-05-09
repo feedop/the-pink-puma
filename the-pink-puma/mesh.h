@@ -109,7 +109,7 @@ namespace mini
 		//Mesh Loading
 		static Mesh LoadMesh(const DxDevice& device, const std::wstring& meshPath);
 
-	private:
+	protected:
 		dx_ptr<ID3D11Buffer> m_indexBuffer;
 		dx_ptr_vector<ID3D11Buffer> m_vertexBuffers;
 		std::vector<unsigned int> m_strides;

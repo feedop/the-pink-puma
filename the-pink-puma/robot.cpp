@@ -9,12 +9,12 @@ Robot::Robot(const DxDevice& device, XMFLOAT3 circleCenter, float circleRadius) 
 {
 	m_circleCenter = XMLoadFloat3(&circleCenter);
 
-	m_meshes[0] = Mesh::LoadMesh(device, L"resources/meshes/mesh1.txt");
-	m_meshes[1] = Mesh::LoadMesh(device, L"resources/meshes/mesh2.txt");
-	m_meshes[2] = Mesh::LoadMesh(device, L"resources/meshes/mesh3.txt");
-	m_meshes[3] = Mesh::LoadMesh(device, L"resources/meshes/mesh4.txt");
-	m_meshes[4] = Mesh::LoadMesh(device, L"resources/meshes/mesh5.txt");
-	m_meshes[5] = Mesh::LoadMesh(device, L"resources/meshes/mesh6.txt");
+	m_meshes[0] = MeshWithAdjency::LoadMesh(device, L"resources/meshes/mesh1.txt");
+	m_meshes[1] = MeshWithAdjency::LoadMesh(device, L"resources/meshes/mesh2.txt");
+	m_meshes[2] = MeshWithAdjency::LoadMesh(device, L"resources/meshes/mesh3.txt");
+	m_meshes[3] = MeshWithAdjency::LoadMesh(device, L"resources/meshes/mesh4.txt");
+	m_meshes[4] = MeshWithAdjency::LoadMesh(device, L"resources/meshes/mesh5.txt");
+	m_meshes[5] = MeshWithAdjency::LoadMesh(device, L"resources/meshes/mesh6.txt");
 
 	XMStoreFloat4x4(&m_mtx[0], m_commonTransformation);
 	Update({ 0,0,0,0,0 });

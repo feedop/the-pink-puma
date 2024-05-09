@@ -1,6 +1,6 @@
 #pragma once
 #include "dxApplication.h"
-#include "mesh.h"
+#include "meshWithAdjacency.h"
 
 #include <array>
 #include <ranges>
@@ -26,7 +26,7 @@ namespace mini::gk2
 		void Update(const std::array<float, 5>& angles);
 
 	private:
-		std::array<Mesh, 6> m_meshes;
+		std::array<MeshWithAdjency, 6> m_meshes;
 		std::array<DirectX::XMFLOAT4X4, 6> m_mtx;
 		std::array<DirectX::XMMATRIX, 5> m_tempMtx;
 

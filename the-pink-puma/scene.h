@@ -1,6 +1,7 @@
 #pragma once
 #include "dxApplication.h"
 #include "mesh.h"
+#include "meshWithAdjacency.h"
 #include "particleSystem.h"
 #include "robot.h"
 
@@ -65,11 +66,11 @@ namespace mini::gk2
 		//Depth stencil state used to perform stencil test when drawing mirrored scene
 		dx_ptr<ID3D11DepthStencilState> m_dssStencilTest;
 
-		dx_ptr<ID3D11InputLayout> m_inputlayout, m_particleLayout;
+		dx_ptr<ID3D11InputLayout> m_inputlayout, m_particleLayout, m_silhouetteLayout;
 
-		dx_ptr<ID3D11VertexShader> m_phongVS, m_particleVS;
-		dx_ptr<ID3D11GeometryShader> m_particleGS;
-		dx_ptr<ID3D11PixelShader> m_phongPS, m_particlePS;
+		dx_ptr<ID3D11VertexShader> m_phongVS, m_particleVS, m_silhouetteVS;
+		dx_ptr<ID3D11GeometryShader> m_particleGS, m_silhouetteGS;
+		dx_ptr<ID3D11PixelShader> m_phongPS, m_particlePS, m_silhouettePS;
 
 		ParticleSystem m_particles;
 
@@ -85,11 +86,13 @@ namespace mini::gk2
 		void UpdateParticles(float dt);
 
 		void DrawMesh(const Mesh& m, DirectX::XMFLOAT4X4 worldMtx);
+		void DrawMeshWithAdjency(const MeshWithAdjency& m, const DirectX::XMFLOAT4X4& worldMtx);
 		void DrawParticles();
 		void DrawTransparentObjects();
 		void DrawRobot();
 		void DrawMirror();
 		void DrawMirroredWorld(int i);
+		void DrawSilhouette();
 
 		void SetWorldMtx(DirectX::XMFLOAT4X4 mtx);
 		void SetShaders(const dx_ptr<ID3D11VertexShader>& vs, const dx_ptr<ID3D11PixelShader>& ps);

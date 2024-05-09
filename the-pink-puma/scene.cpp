@@ -121,6 +121,14 @@ Scene::Scene(HINSTANCE appInstance)
 	m_particleGS = m_device.CreateGeometryShader(gsCode);
 	m_particleLayout = m_device.CreateInputLayout<ParticleVertex>(vsCode);
 
+	vsCode = m_device.LoadByteCode(L"silhouetteVS.cso");
+	psCode = m_device.LoadByteCode(L"silhouettePS.cso");
+	gsCode = m_device.LoadByteCode(L"silhouetteGS.cso");
+	m_silhouetteVS = m_device.CreateVertexShader(vsCode);
+	m_silhouettePS = m_device.CreatePixelShader(psCode);
+	m_silhouetteGS = m_device.CreateGeometryShader(gsCode);
+	m_silhouetteLayout = m_device.CreateInputLayout(VertexPositionNormal::Layout, vsCode);
+
 	m_device.context()->IASetInputLayout(m_inputlayout.get());
 	m_device.context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -257,6 +265,14 @@ void Scene::DrawMesh(const Mesh& m, DirectX::XMFLOAT4X4 worldMtx)
 	m.Render(m_device.context());
 }
 
+
+void mini::gk2::Scene::DrawMeshWithAdjency(const MeshWithAdjency& m, const DirectX::XMFLOAT4X4& worldMtx)
+{
+	SetWorldMtx(worldMtx);
+	m.RenderWithAdjency(m_device.context());
+}
+
+
 void Scene::DrawParticles()
 {
 	//Set input layout, primitive topology, shaders, vertex buffer, and draw particles
@@ -357,6 +373,24 @@ void mini::gk2::Scene::DrawMirroredWorld(int i)
 }
 
 
+void mini::gk2::Scene::DrawSilhouette()
+{
+	SetShaders(m_silhouetteVS, m_silhouettePS);
+	m_device.context()->IASetInputLayout(m_silhouetteLayout.get());
+	m_device.context()->GSSetShader(m_silhouetteGS.get(), nullptr, 0);
+
+	for (const auto& item : m_robot.GetDrawData())
+	{
+		DrawMeshWithAdjency(std::get<0>(item), std::get<1>(item));
+	}
+
+	//Reset layout, primitive topology and geometry shader
+	m_device.context()->GSSetShader(nullptr, nullptr, 0);
+	m_device.context()->IASetInputLayout(m_inputlayout.get());
+	m_device.context()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+}
+
+
 void Scene::DrawScene(bool drawRobot)
 {
 	UpdateBuffer(m_cbSurfaceColor, XMFLOAT4{ 0.7f, 0.7f, 1.0f, 1.0f });
@@ -401,4 +435,6 @@ void Scene::Render()
 	DrawParticles();
 	m_device.context()->OMSetBlendState(nullptr, nullptr, UINT_MAX);
 	m_device.context()->OMSetDepthStencilState(nullptr, 0);
+
+	DrawSilhouette();
 }
