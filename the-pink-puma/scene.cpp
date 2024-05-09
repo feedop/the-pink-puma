@@ -51,8 +51,9 @@ Scene::Scene(HINSTANCE appInstance)
 	vector<unsigned short> indices;
 	// TODO: Load robot
 	m_wall = Mesh::Rectangle(m_device, 4.0f);
-	m_cylinder = Mesh::Cylinder(m_device, 4, 9, 1.0f, 0.1f);
+	m_cylinder = Mesh::Cylinder(m_device, 4, 32, 1.0f, 0.1f);
 	m_mirror = Mesh::Rectangle(m_device, 2.f * (CIRCLE_RADIUS + MIRROR_OFFSET));
+	m_circle = Mesh::Disk(m_device, 32, 1.0f);
 
 	m_vbParticles = m_device.CreateVertexBuffer<ParticleVertex>(ParticleSystem::MAX_PARTICLES);
 
@@ -63,8 +64,12 @@ Scene::Scene(HINSTANCE appInstance)
 		XMStoreFloat4x4(&m_wallsMtx[i], temp * XMMatrixRotationY(a));
 	XMStoreFloat4x4(&m_wallsMtx[4], temp * XMMatrixRotationX(XM_PIDIV2));
 	XMStoreFloat4x4(&m_wallsMtx[5], temp * XMMatrixRotationX(-XM_PIDIV2));
-	
+
 	XMStoreFloat4x4(&m_cylinderMtx, XMMatrixRotationZ(XM_PIDIV2) * XMMatrixScaling(2.0f, 2.0f, 2.0f) * XMMatrixTranslation(0.0f, -2.0f, 1.0f));
+
+	static constexpr float circleScale = 1.0f / 5.0f;
+	XMStoreFloat4x4(&m_circleMtx[0], XMMatrixRotationZ(XM_PIDIV2) * XMMatrixScaling(circleScale, circleScale, circleScale) * XMMatrixTranslation(-1.0f, -2.0f, 1.0f));
+	XMStoreFloat4x4(&m_circleMtx[1], XMMatrixRotationZ(-XM_PIDIV2) * XMMatrixScaling(circleScale, circleScale, circleScale) * XMMatrixTranslation(1.0f, -2.0f, 1.0f));
 
 	XMStoreFloat4x4(&m_frontMirrorObjectMtx, XMMatrixRotationY(XM_PIDIV2*3.f) * XMMatrixRotationZ(XM_PIDIV2 / 3.0f) * XMMatrixTranslation(CIRCLE_CENTER.x, CIRCLE_CENTER.y, CIRCLE_CENTER.z));
 	XMStoreFloat4x4(&m_frontMirrorViewMtx, XMMatrixInverse(nullptr, XMLoadFloat4x4(&m_frontMirrorObjectMtx)) * XMMatrixScaling(1.0f, 1.0f, -1.0f) * XMLoadFloat4x4(&m_frontMirrorObjectMtx));
@@ -365,6 +370,8 @@ void Scene::DrawScene(bool drawRobot)
 
 	UpdateBuffer(m_cbSurfaceColor, XMFLOAT4{ 0.7f, 0.2f, 0.7f, 1.0f });
 	DrawMesh(m_cylinder, m_cylinderMtx);
+	DrawMesh(m_circle, m_circleMtx[0]);
+	DrawMesh(m_circle, m_circleMtx[1]);
 
 	if (drawRobot) {
 		UpdateBuffer(m_cbSurfaceColor, XMFLOAT4{ 1.0f, 0.6f, 0.7f, 1.0f });
