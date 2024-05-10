@@ -35,12 +35,14 @@ namespace mini::gk2
 		Mesh m_wall; //uses m_wallsMtx[6]
 		Mesh m_cylinder; //uses m_cylinderMtx
 		Mesh m_mirror; // uses m_frontMirrorObjectMtx and m_backMirrorObjectMtx
+		Mesh m_circle;
 
 		dx_ptr<ID3D11Buffer> m_vbParticles;
 
 		DirectX::XMFLOAT4X4 m_projMtx,
 			m_wallsMtx[6],
 			m_cylinderMtx,
+			m_circleMtx[2],
 			m_lightViewMtx[2],
 			m_lightProjMtx,
 			m_frontMirrorObjectMtx,
