@@ -107,6 +107,8 @@ Scene::Scene(HINSTANCE appInstance)
 	dssDesc.BackFace.StencilFunc = D3D11_COMPARISON_NEVER;
 	m_dssStencilTest = m_device.CreateDepthStencilState(dssDesc);
 
+	CreateRenderStates();
+
 	auto vsCode = m_device.LoadByteCode(L"phongVS.cso");
 	auto psCode = m_device.LoadByteCode(L"phongPS.cso");
 	m_phongVS = m_device.CreateVertexShader(vsCode);
@@ -144,6 +146,101 @@ Scene::Scene(HINSTANCE appInstance)
 	ID3D11Buffer* psb[] = { m_cbSurfaceColor.get(), m_cbLightPos.get() };
 	m_device.context()->PSSetConstantBuffers(0, 2, psb); // Pixel Shaders - 0: surfaceColor, 1: lightPos, 2: mapMtx
 }
+
+
+void mini::gk2::Scene::CreateRenderStates()
+{
+	DepthStencilDescription dssDesc;
+	dssDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; //Enable writing to depth buffer
+	m_dssNoDepthWrite = m_device.CreateDepthStencilState(dssDesc);
+
+	dssDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL; //Enable writing to depth buffer
+	m_dssDepthWrite = m_device.CreateDepthStencilState(dssDesc);
+	dssDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+
+	dssDesc.StencilEnable = true;
+	dssDesc.BackFace.StencilFunc = D3D11_COMPARISON_NEVER;
+	dssDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_DECR_SAT;
+	dssDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	dssDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+	m_dssStencilWrite = m_device.CreateDepthStencilState(dssDesc);
+
+	dssDesc.StencilEnable = true;
+	dssDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+	dssDesc.StencilWriteMask = 0xff;
+	dssDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	dssDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_DECR;
+	dssDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	dssDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	dssDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	dssDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_INCR;
+	dssDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	dssDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	m_dssStencilWriteSh = m_device.CreateDepthStencilState(dssDesc);
+
+	dssDesc.StencilEnable = true;
+	dssDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	dssDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	dssDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	dssDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	dssDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	dssDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	dssDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	dssDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	dssDesc.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
+	m_dssStencilTestNoDepthWrite = m_device.CreateDepthStencilState(dssDesc);
+
+	dssDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+	dssDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	m_dssStencilTest = m_device.CreateDepthStencilState(dssDesc);
+
+	dssDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	dssDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	dssDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+	dssDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+	dssDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	dssDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+
+	dssDesc.BackFace.StencilFunc = D3D11_COMPARISON_NEVER;
+	dssDesc.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
+	dssDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+	dssDesc.DepthFunc = D3D11_COMPARISON_EQUAL;
+	dssDesc.StencilWriteMask = 0x0;
+	m_dssStencilTestSh = m_device.CreateDepthStencilState(dssDesc);
+
+
+	dssDesc.FrontFace.StencilFunc = D3D11_COMPARISON_LESS;
+	dssDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+	dssDesc.StencilWriteMask = 0x0;
+	dssDesc.DepthFunc = D3D11_COMPARISON_EQUAL;
+	m_dssStencilTestGreaterSh = m_device.CreateDepthStencilState(dssDesc);
+
+	RasterizerDescription rsDesc;
+	rsDesc.FrontCounterClockwise = true;
+	m_rsCCW = m_device.CreateRasterizerState(rsDesc);
+
+	rsDesc.FrontCounterClockwise = false;
+	rsDesc.CullMode = D3D11_CULL_NONE;
+	m_rsCCW_backSh = m_device.CreateRasterizerState(rsDesc);
+	rsDesc.CullMode = D3D11_CULL_BACK;
+	m_rsCCW_frontSh = m_device.CreateRasterizerState(rsDesc);
+
+	BlendDescription bsDesc;
+	bsDesc.RenderTarget[0].BlendEnable = true;
+	bsDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	bsDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+	bsDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	m_bsAlpha = m_device.CreateBlendState(bsDesc);
+
+	bsDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	m_bsAlphaInv = m_device.CreateBlendState(bsDesc);
+
+	bsDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ZERO;
+	bsDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	bsDesc.RenderTarget[0].RenderTargetWriteMask = 0x0F;
+	m_bsAdd = m_device.CreateBlendState(bsDesc);
+}
+
 
 bool Scene::HandleKeyboardInput(double dt)
 {
@@ -412,6 +509,41 @@ void Scene::DrawScene(bool drawRobot)
 	m_device.context()->RSSetState(nullptr);
 }
 
+
+void mini::gk2::Scene::RenderShadow()
+{
+	ClearDepthAndStencilBuffer();
+	//RenderToDepthBuffer();
+	//1. Rysowanie całej sceny do depth buffora
+
+	//m_device.context()->OMSetRenderTargets(0, 0,0);
+	m_device.context()->OMSetDepthStencilState(m_dssDepthWrite.get(), 0);
+	DrawScene();
+
+	//2. Rysowanie brył cienia do stencil buffer
+	m_device.context()->OMSetDepthStencilState(m_dssStencilWriteSh.get(), 0);
+	m_device.context()->RSSetState(m_rsCCW_backSh.get());
+	// 	   Dla front face stencil++
+	// 	   Dla back face stencil--
+	DrawSilhouette();
+	//DrawBox();
+	//3. Render całej sceny z uwzględnieniem wartości w stencilu
+	ResetRenderTarget();
+
+	m_device.context()->OMSetDepthStencilState(m_dssStencilTestSh.get(), 0);
+	m_device.context()->RSSetState(m_rsCCW_frontSh.get());
+	//Set1Light(LightPos);
+	UpdateBuffer(m_cbSurfaceColor, XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f));
+	DrawScene();
+
+	m_device.context()->OMSetDepthStencilState(m_dssStencilTestGreaterSh.get(), 0);
+	m_device.context()->RSSetState(m_rsCCW_frontSh.get());
+	//Set3Lights();
+	UpdateBuffer(m_cbSurfaceColor, XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f));
+	DrawScene();
+}
+
+
 void Scene::Render()
 {
 	Base::Render();
@@ -432,7 +564,8 @@ void Scene::Render()
 	DrawMirror();
 	m_device.context()->OMSetBlendState(nullptr, nullptr, BS_MASK);
 
-	DrawScene();
+	//DrawScene();
+	RenderShadow();
 
 	m_device.context()->OMSetBlendState(m_bsAlpha.get(), nullptr, UINT_MAX);
 	m_device.context()->OMSetDepthStencilState(m_dssNoWrite.get(), 0);
@@ -440,5 +573,5 @@ void Scene::Render()
 	m_device.context()->OMSetBlendState(nullptr, nullptr, UINT_MAX);
 	m_device.context()->OMSetDepthStencilState(nullptr, 0);
 
-	DrawSilhouette();
+	//DrawSilhouette();
 }

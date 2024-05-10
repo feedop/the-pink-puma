@@ -60,11 +60,29 @@ namespace mini::gk2
 		dx_ptr<ID3D11DepthStencilState> m_dssNoWrite;
 		//Rasterizer state used to define front faces as counter-clockwise, used when drawing mirrored scene
 		dx_ptr<ID3D11RasterizerState> m_rsCCW;
+		dx_ptr<ID3D11RasterizerState> m_rsCCW_backSh;
+		dx_ptr<ID3D11RasterizerState> m_rsCCW_frontSh;
+
+		//dx_ptr<ID3D11BlendState> m_bsAlpha;
+		dx_ptr<ID3D11BlendState> m_bsAlphaInv;
+		dx_ptr<ID3D11BlendState> m_bsAdd;
 
 		//Depth stencil state used to fill the stencil buffer
 		dx_ptr<ID3D11DepthStencilState> m_dssStencilWrite;
 		//Depth stencil state used to perform stencil test when drawing mirrored scene
 		dx_ptr<ID3D11DepthStencilState> m_dssStencilTest;
+
+		dx_ptr<ID3D11DepthStencilState> m_dssNoDepthWrite;
+		dx_ptr<ID3D11DepthStencilState> m_dssDepthWrite;
+		//Depth stencil state used to fill the stencil buffer
+		//dx_ptr<ID3D11DepthStencilState> m_dssStencilWrite;
+		dx_ptr<ID3D11DepthStencilState> m_dssStencilWriteSh;
+		//Depth stencil state used to perform stencil test when drawing mirrored scene
+		//dx_ptr<ID3D11DepthStencilState> m_dssStencilTest;
+		dx_ptr<ID3D11DepthStencilState> m_dssStencilTestSh;
+		dx_ptr<ID3D11DepthStencilState> m_dssStencilTestGreaterSh;
+		//Depth stencil state used to perform stencil test when drawing mirrored billboards without writing to the depth buffer
+		dx_ptr<ID3D11DepthStencilState> m_dssStencilTestNoDepthWrite;
 
 		dx_ptr<ID3D11InputLayout> m_inputlayout, m_particleLayout, m_silhouetteLayout;
 
@@ -85,6 +103,8 @@ namespace mini::gk2
 		void UpdateCameraCB() { UpdateCameraCB(m_camera.getViewMatrix()); }
 		void UpdateParticles(float dt);
 
+		void CreateRenderStates();
+
 		void DrawMesh(const Mesh& m, DirectX::XMFLOAT4X4 worldMtx);
 		void DrawMeshWithAdjency(const MeshWithAdjency& m, const DirectX::XMFLOAT4X4& worldMtx);
 		void DrawParticles();
@@ -93,6 +113,7 @@ namespace mini::gk2
 		void DrawMirror();
 		void DrawMirroredWorld(int i);
 		void DrawSilhouette();
+		void RenderShadow();
 
 		void SetWorldMtx(DirectX::XMFLOAT4X4 mtx);
 		void SetShaders(const dx_ptr<ID3D11VertexShader>& vs, const dx_ptr<ID3D11PixelShader>& ps);
