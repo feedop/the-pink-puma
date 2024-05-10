@@ -81,3 +81,22 @@ void mini::DxApplication::ResetRenderTarget()
 	m_device.context()->OMSetRenderTargets(1, &backBuffer, m_depthBuffer.get());
 	m_device.context()->RSSetViewports(1, &m_viewport);
 }
+
+
+void mini::DxApplication::RenderToDepthBuffer()
+{
+	m_device.context()->OMSetRenderTargets(0, nullptr, m_depthBuffer.get());
+}
+
+
+void mini::DxApplication::ClearDepthBuffer()
+{
+	m_device.context()->ClearDepthStencilView(m_depthBuffer.get(),
+		D3D11_CLEAR_DEPTH, 1.0f, 0);
+}
+
+void mini::DxApplication::ClearDepthAndStencilBuffer()
+{
+	m_device.context()->ClearDepthStencilView(m_depthBuffer.get(),
+		D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+}

@@ -135,10 +135,14 @@ Scene::Scene(HINSTANCE appInstance)
 	//We have to make sure all shaders use constant buffers in the same slots!
 	//Not all slots will be use by each shader
 	ID3D11Buffer* vsb[] = { m_cbWorldMtx.get(),  m_cbViewMtx.get(), m_cbProjMtx.get() };
-	m_device.context()->VSSetConstantBuffers(0, 3, vsb); //Vertex Shaders - 0: worldMtx, 1: viewMtx,invViewMtx, 2: projMtx, 3: tex1Mtx, 4: tex2Mtx
-	m_device.context()->GSSetConstantBuffers(0, 1, vsb + 2); //Geometry Shaders - 0: projMtx
+	m_device.context()->VSSetConstantBuffers(0, 3, vsb); // Vertex Shaders - 0: worldMtx, 1: viewMtx,invViewMtx, 2: projMtx, 3: tex1Mtx, 4: tex2Mtx
+	m_device.context()->GSSetConstantBuffers(0, 2, vsb + 1); // Geometry Shaders - 0: viewMtx, 1: projMtx
+
+	ID3D11Buffer* lsb[] = { m_cbLightPos.get() };
+	m_device.context()->GSSetConstantBuffers(2, 1, lsb); // Geometry Shaders - 2: lightPos
+
 	ID3D11Buffer* psb[] = { m_cbSurfaceColor.get(), m_cbLightPos.get() };
-	m_device.context()->PSSetConstantBuffers(0, 2, psb); //Pixel Shaders - 0: surfaceColor, 1: lightPos, 2: mapMtx
+	m_device.context()->PSSetConstantBuffers(0, 2, psb); // Pixel Shaders - 0: surfaceColor, 1: lightPos, 2: mapMtx
 }
 
 bool Scene::HandleKeyboardInput(double dt)

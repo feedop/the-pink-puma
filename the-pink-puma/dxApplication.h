@@ -49,6 +49,10 @@ namespace mini
 
 		//Resets pipeline back to rendering into program window
 		void ResetRenderTarget();
+		void RenderToDepthBuffer();
+
+		void ClearDepthBuffer();
+		void ClearDepthAndStencilBuffer();
 
 		DxDevice m_device;
 
